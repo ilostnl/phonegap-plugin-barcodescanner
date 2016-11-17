@@ -164,7 +164,7 @@
     } else {
       options = command.arguments[0];
     }
-
+    NSLog(@"prompt: %@", [options[@"prompt"]);
     BOOL preferFrontCamera = [options[@"preferFrontCamera"] boolValue];
     BOOL showFlipCameraButton = [options[@"showFlipCameraButton"] boolValue];
     BOOL showTorchButton = [options[@"showTorchButton"] boolValue];
@@ -367,7 +367,7 @@ parentViewController:(UIViewController*)parentViewController
 - (void)barcodeScanDone:(void (^)(void))callbackBlock {
     self.capturing = NO;
     [self.captureSession stopRunning];
-    [self.parentViewController dismissViewControllerAnimated:self.isTransitionAnimated completion:callbackBlock];
+    [self.parentViewController dismissViewControllerAnimated:YES completion:callbackBlock];
 
     // viewcontroller holding onto a reference to us, release them so they
     // will release us
