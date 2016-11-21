@@ -61,6 +61,7 @@
 @property (nonatomic)         BOOL                        is2D;
 @property (nonatomic)         BOOL                        capturing;
 @property (nonatomic)         BOOL                        isFrontCamera;
+@property (nonatomic, retain) NSString*                   prompt;
 @property (nonatomic)         BOOL                        isShowFlipCameraButton;
 @property (nonatomic)         BOOL                        isShowTorchButton;
 @property (nonatomic)         BOOL                        isFlipped;
@@ -164,7 +165,8 @@
     } else {
       options = command.arguments[0];
     }
-    NSLog(@"prompt: %@", [options[@"prompt"]);
+
+    NSString *prompt = [[NSString alloc] initWithString:options[@"prompt"]];
     BOOL preferFrontCamera = [options[@"preferFrontCamera"] boolValue];
     BOOL showFlipCameraButton = [options[@"showFlipCameraButton"] boolValue];
     BOOL showTorchButton = [options[@"showTorchButton"] boolValue];
@@ -195,6 +197,10 @@
             alterateOverlayXib:overlayXib
             ];
     // queue [processor scanBarcode] to run on the event loop
+
+    if ([prompt length] != 0) {
+      processor.prompt = prompt;
+    }
 
     if (preferFrontCamera) {
       processor.isFrontCamera = true;
@@ -916,8 +922,18 @@ parentViewController:(UIViewController*)parentViewController
         | UIViewAutoresizingFlexibleBottomMargin)
     ;
 
-    [overlayView addSubview: self.reticleView];
-    [self resizeElements];
+    [overlayView addSubview: reticleView];
+
+    if (_processor.prompt) {
+      UITextView *textView = [[UITextView alloc]initWithFrame:CGRectMake(0, self.view.frame.size.height-100, self.view.frame.size.width, 50)];
+      textView.text = _processor.prompt;
+      textView.font = [UIFont systemFontOfSize:17.0];
+      textView.backgroundColor = [UIColor greenColor];
+      textView.textAlignment = NSTextAlignmentCenter;
+
+      [overlayView addSubview: textView];
+    }
+
     return overlayView;
 }
 
