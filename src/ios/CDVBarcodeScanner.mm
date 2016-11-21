@@ -16,6 +16,7 @@
 // use the all-in-one version of zxing that we built
 //------------------------------------------------------------------------------
 #import "zxing-all-in-one.h"
+#import "PartialTransparentView.h"
 #import <Cordova/CDVPlugin.h>
 
 
@@ -137,6 +138,17 @@
     }
 
     return result;
+}
+
+//------------------------------------------------------------------------------
+// creates UIColor from rgb value
+//------------------------------------------------------------------------------
+- (UIColor *)colorFromHexString:(NSString *)hexString alpha:(CGFloat)alpha {
+    unsigned rgbValue = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hexString];
+    [scanner setScanLocation:1]; // bypass '#' character
+    [scanner scanHexInt:&rgbValue];
+    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:alpha];
 }
 
 -(BOOL)notHasPermission
@@ -930,8 +942,10 @@ parentViewController:(UIViewController*)parentViewController
     overlayView.opaque              = NO;
 
     UIToolbar* toolbar = [[UIToolbar alloc] init];
+    toolbar.barTintColor = [self colorFromHexString:@"#1e7dc5" alpha:1.0];
     toolbar.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
 
+    [[UIBarButtonItem appearance] setTintColor:[self colorFromHexString:@"#ffffff" alpha:1.0]];
     id cancelButton = [[[UIBarButtonItem alloc]
                        initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
                        target:(id)self
@@ -981,35 +995,44 @@ parentViewController:(UIViewController*)parentViewController
 
     [overlayView addSubview: toolbar];
 
-    UIImage* reticleImage = [self buildReticleImage];
-    UIView* reticleView = [[UIImageView alloc] initWithImage: reticleImage];
-    CGFloat minAxis = MIN(rootViewHeight, rootViewWidth);
+    // UIImage* reticleImage = [self buildReticleImage];
+    // UIView* reticleView = [[UIImageView alloc] initWithImage: reticleImage];
+    // CGFloat minAxis = MIN(rootViewHeight, rootViewWidth);
+    //
+    // rectArea = CGRectMake(
+    //                       0.5 * (rootViewWidth  - minAxis),
+    //                       0.5 * (rootViewHeight - minAxis),
+    //                       minAxis,
+    //                       minAxis
+    //                       );
+    //
+    // [reticleView setFrame:rectArea];
+    //
+    // reticleView.opaque           = NO;
+    // reticleView.contentMode      = UIViewContentModeScaleAspectFit;
+    // reticleView.autoresizingMask = 0
+    // | UIViewAutoresizingFlexibleLeftMargin
+    // | UIViewAutoresizingFlexibleRightMargin
+    // | UIViewAutoresizingFlexibleTopMargin
+    // | UIViewAutoresizingFlexibleBottomMargin
+    // ;
+    //
+    // [overlayView addSubview: reticleView];
 
-    rectArea = CGRectMake(
-                          0.5 * (rootViewWidth  - minAxis),
-                          0.5 * (rootViewHeight - minAxis),
-                          minAxis,
-                          minAxis
-                          );
+    // UIImage* reticleImage = [self buildReticleImage];
+    // get your window screen size
+    CGRect screenRect = [[UIScreen mainScreen] bounds];
 
-    [reticleView setFrame:rectArea];
+    NSArray *transparentRects = [[NSArray alloc] initWithObjects:[NSValue valueWithCGRect:CGRectMake(0, 50, 100, 20)], nil];
+    PartialTransparentView *transparentView = [[PartialTransparentView alloc] initWithFrame:screenRect backgroundColor:[[UIColor blackColor] colorWithAlphaComponent:0.6] andTransparentRects:transparentRects];
+    [overlayView addSubview: transparentView];
 
-    reticleView.opaque           = NO;
-    reticleView.contentMode      = UIViewContentModeScaleAspectFit;
-    reticleView.autoresizingMask = 0
-    | UIViewAutoresizingFlexibleLeftMargin
-    | UIViewAutoresizingFlexibleRightMargin
-    | UIViewAutoresizingFlexibleTopMargin
-    | UIViewAutoresizingFlexibleBottomMargin
-    ;
-
-    [overlayView addSubview: reticleView];
 
     if (_processor.prompt) {
-      UITextView *textView = [[UITextView alloc]initWithFrame:CGRectMake(0, self.view.frame.size.height-100, self.view.frame.size.width, 50)];
+      UITextView *textView = [[UITextView alloc]initWithFrame:CGRectMake(0, self.view.frame.size.height-(2*toolbarHeight), self.view.frame.size.width, toolbarHeight)];
       textView.text = _processor.prompt;
       textView.font = [UIFont systemFontOfSize:17.0];
-      textView.backgroundColor = [UIColor greenColor];
+      textView.backgroundColor = [self colorFromHexString:@"#1e7dc5" alpha:.7];
       textView.textAlignment = NSTextAlignmentCenter;
 
       [overlayView addSubview: textView];
