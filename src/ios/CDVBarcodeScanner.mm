@@ -16,7 +16,6 @@
 // use the all-in-one version of zxing that we built
 //------------------------------------------------------------------------------
 #import "zxing-all-in-one.h"
-#import "PartialTransparentView.h"
 #import <Cordova/CDVPlugin.h>
 
 
@@ -138,17 +137,6 @@
     }
 
     return result;
-}
-
-//------------------------------------------------------------------------------
-// creates UIColor from rgb value
-//------------------------------------------------------------------------------
-- (UIColor *)colorFromHexString:(NSString *)hexString alpha:(CGFloat)alpha {
-    unsigned rgbValue = 0;
-    NSScanner *scanner = [NSScanner scannerWithString:hexString];
-    [scanner setScanLocation:1]; // bypass '#' character
-    [scanner scanHexInt:&rgbValue];
-    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:alpha];
 }
 
 -(BOOL)notHasPermission
@@ -856,6 +844,17 @@ parentViewController:(UIViewController*)parentViewController
     [super dealloc];
 }
 
+//------------------------------------------------------------------------------
+// creates UIColor from rgb value
+//------------------------------------------------------------------------------
+- (UIColor *)colorFromHexString:(NSString *)hexString alpha:(CGFloat)alpha {
+    unsigned rgbValue = 0;
+    NSScanner *scanner = [NSScanner scannerWithString:hexString];
+    [scanner setScanLocation:1]; // bypass '#' character
+    [scanner scanHexInt:&rgbValue];
+    return [UIColor colorWithRed:((rgbValue & 0xFF0000) >> 16)/255.0 green:((rgbValue & 0xFF00) >> 8)/255.0 blue:(rgbValue & 0xFF)/255.0 alpha:alpha];
+}
+
 //--------------------------------------------------------------------------
 - (void)loadView {
     self.view = [[UIView alloc] initWithFrame: self.processor.parentViewController.view.frame];
@@ -926,6 +925,23 @@ parentViewController:(UIViewController*)parentViewController
     return self.overlayView;
 }
 
+- (void)addMaskViewToOverlay:(UIView*)overlay rect:(CGRect)rect autoresizing:(UIViewAutoresizing)autoresize
+{
+    UIView *mask = [[UIView alloc] initWithFrame:rect];
+    mask.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.4];
+    mask.autoresizingMask = autoresize;
+    [overlay addSubview: mask];
+}
+
+//--------------------------------------------------------------------------
+
+#define IPAD                UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad
+#define RETICLE_SIZE        300.0f
+#define RETICLE_SIZE_IPAD   500.0f
+#define RETICLE_WIDTH       10.0f
+#define RETICLE_OFFSET      60.0f
+#define RETICLE_ALPHA       0.4f
+
 //--------------------------------------------------------------------------
 - (UIView*)buildOverlayView {
 
@@ -984,6 +1000,12 @@ parentViewController:(UIViewController*)parentViewController
       toolbar.items = [NSArray arrayWithObjects:flexSpace,cancelButton,flexSpace,nil];
     }
 #endif
+    float Ret_size = RETICLE_SIZE;
+
+    if (IPAD) {
+        Ret_size = RETICLE_SIZE_IPAD;
+    }
+
     bounds = overlayView.bounds;
 
     [toolbar sizeToFit];
@@ -993,97 +1015,38 @@ parentViewController:(UIViewController*)parentViewController
     CGRect  rectArea       = CGRectMake(0, rootViewHeight - toolbarHeight, rootViewWidth, toolbarHeight);
     [toolbar setFrame:rectArea];
 
+    CGRect rectL = CGRectMake(0, 0, (self.view.frame.size.width - Ret_size)/2, self.view.frame.size.height);
+    CGRect rectT = CGRectMake((self.view.frame.size.width - Ret_size)/2, 0, Ret_size, (self.view.frame.size.height - Ret_size)/2);
+    CGRect rectB = CGRectMake((self.view.frame.size.width - Ret_size)/2, ((self.view.frame.size.height - Ret_size)/2 + Ret_size), Ret_size, (self.view.frame.size.height - Ret_size)/2);
+    CGRect rectR = CGRectMake(((self.view.frame.size.width - Ret_size)/2 + Ret_size), 0, (self.view.frame.size.width - Ret_size)/2, self.view.frame.size.height);
+    CGRect rect = CGRectMake((self.view.frame.size.width - Ret_size)/2, (self.view.frame.size.height - Ret_size)/2, Ret_size, Ret_size);
+
+    [self addMaskViewToOverlay:overlayView rect:rectL autoresizing:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleRightMargin];
+    [self addMaskViewToOverlay:overlayView rect:rectR autoresizing:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleLeftMargin];
+    [self addMaskViewToOverlay:overlayView rect:rectT autoresizing:UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin];
+    [self addMaskViewToOverlay:overlayView rect:rectB autoresizing:UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin];
+
+    UIView * borderRect = [[UIView alloc] initWithFrame:rect];
+    borderRect.layer.borderWidth = 1;
+    borderRect.layer.borderColor = [UIColor colorWithWhite:1.0 alpha:0.7].CGColor;
+    borderRect.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleBottomMargin;
+    [overlayView addSubview:borderRect];
+
     [overlayView addSubview: toolbar];
 
-    // UIImage* reticleImage = [self buildReticleImage];
-    // UIView* reticleView = [[UIImageView alloc] initWithImage: reticleImage];
-    // CGFloat minAxis = MIN(rootViewHeight, rootViewWidth);
-    //
-    // rectArea = CGRectMake(
-    //                       0.5 * (rootViewWidth  - minAxis),
-    //                       0.5 * (rootViewHeight - minAxis),
-    //                       minAxis,
-    //                       minAxis
-    //                       );
-    //
-    // [reticleView setFrame:rectArea];
-    //
-    // reticleView.opaque           = NO;
-    // reticleView.contentMode      = UIViewContentModeScaleAspectFit;
-    // reticleView.autoresizingMask = 0
-    // | UIViewAutoresizingFlexibleLeftMargin
-    // | UIViewAutoresizingFlexibleRightMargin
-    // | UIViewAutoresizingFlexibleTopMargin
-    // | UIViewAutoresizingFlexibleBottomMargin
-    // ;
-    //
-    // [overlayView addSubview: reticleView];
-
-    // UIImage* reticleImage = [self buildReticleImage];
-    // get your window screen size
-    CGRect screenRect = [[UIScreen mainScreen] bounds];
-
-    NSArray *transparentRects = [[NSArray alloc] initWithObjects:[NSValue valueWithCGRect:CGRectMake(0, 50, 100, 20)], nil];
-    PartialTransparentView *transparentView = [[PartialTransparentView alloc] initWithFrame:screenRect backgroundColor:[[UIColor blackColor] colorWithAlphaComponent:0.6] andTransparentRects:transparentRects];
-    [overlayView addSubview: transparentView];
-
-
     if (_processor.prompt) {
-      UITextView *textView = [[UITextView alloc]initWithFrame:CGRectMake(0, self.view.frame.size.height-(2*toolbarHeight), self.view.frame.size.width, toolbarHeight)];
-      textView.text = _processor.prompt;
-      textView.font = [UIFont systemFontOfSize:17.0];
-      textView.backgroundColor = [self colorFromHexString:@"#1e7dc5" alpha:.7];
-      textView.textAlignment = NSTextAlignmentCenter;
+        UITextView *textView = [[UITextView alloc]initWithFrame:CGRectMake((self.view.frame.size.width - Ret_size)/2, ((self.view.frame.size.height - Ret_size)/2 + Ret_size), Ret_size, 40.0)];
+        textView.text = _processor.prompt;
+        textView.font = [UIFont systemFontOfSize:17.0];
+        textView.textColor = [UIColor whiteColor];
+        textView.backgroundColor = [UIColor clearColor];
+        textView.textAlignment = NSTextAlignmentCenter;
+        textView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleBottomMargin;
 
-      [overlayView addSubview: textView];
+        [overlayView addSubview: textView];
     }
 
     return overlayView;
-}
-
-//--------------------------------------------------------------------------
-
-#define RETICLE_SIZE    500.0f
-#define RETICLE_WIDTH    10.0f
-#define RETICLE_OFFSET   60.0f
-#define RETICLE_ALPHA     0.4f
-
-//-------------------------------------------------------------------------
-// builds the green box and red line
-//-------------------------------------------------------------------------
-- (UIImage*)buildReticleImage {
-    UIImage* result;
-    UIGraphicsBeginImageContext(CGSizeMake(RETICLE_SIZE, RETICLE_SIZE));
-    CGContextRef context = UIGraphicsGetCurrentContext();
-
-    if (self.processor.is1D) {
-        UIColor* color = [UIColor colorWithRed:1.0 green:0.0 blue:0.0 alpha:RETICLE_ALPHA];
-        CGContextSetStrokeColorWithColor(context, color.CGColor);
-        CGContextSetLineWidth(context, RETICLE_WIDTH);
-        CGContextBeginPath(context);
-        CGFloat lineOffset = RETICLE_OFFSET+(0.5*RETICLE_WIDTH);
-        CGContextMoveToPoint(context, lineOffset, RETICLE_SIZE/2);
-        CGContextAddLineToPoint(context, RETICLE_SIZE-lineOffset, 0.5*RETICLE_SIZE);
-        CGContextStrokePath(context);
-    }
-
-    if (self.processor.is2D) {
-        UIColor* color = [UIColor colorWithRed:0.0 green:1.0 blue:0.0 alpha:RETICLE_ALPHA];
-        CGContextSetStrokeColorWithColor(context, color.CGColor);
-        CGContextSetLineWidth(context, RETICLE_WIDTH);
-        CGContextStrokeRect(context,
-                            CGRectMake(
-                                       RETICLE_OFFSET,
-                                       RETICLE_OFFSET,
-                                       RETICLE_SIZE-2*RETICLE_OFFSET,
-                                       RETICLE_SIZE-2*RETICLE_OFFSET
-                                       )
-                            );
-    }
-
-    result = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return result;
 }
 
 #pragma mark CDVBarcodeScannerOrientationDelegate
