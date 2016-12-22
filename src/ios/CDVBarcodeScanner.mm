@@ -937,7 +937,7 @@ parentViewController:(UIViewController*)parentViewController
 
 #define IPAD                UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad
 #define RETICLE_SIZE        300.0f
-#define RETICLE_SIZE_IPAD   600.0f
+#define RETICLE_SIZE_IPAD   300.0f
 #define RETICLE_WIDTH       10.0f
 #define RETICLE_OFFSET      60.0f
 #define RETICLE_ALPHA       0.4f
