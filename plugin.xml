@@ -6,7 +6,7 @@
   <repo>https://github.com/ilostnl/phonegap-plugin-barcodescanner</repo>
   <issue>https://github.com/ilostnl/phonegap-plugin-barcodescanner/issues</issue>
   <engines>
-    <engine name="cordova" version=">=7.1.0"/>
+    <engine name="cordova" version=">=6.3.0"/>
     <engine name="cordova-android" version=">=6.3.0"/>
   </engines>
   <js-module src="www/barcodescanner.js" name="BarcodeScanner">
